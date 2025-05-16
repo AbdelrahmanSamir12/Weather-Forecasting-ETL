@@ -1,0 +1,48 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "weatherforecasting"
+version = "0.0.1"
+description = "simple app for weather forecasting with ML batch serving"
+authors = [
+  { name = "Abdelrahman Samir" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+    "duckdb>=1.2.2",
+    "mkdocs",
+    "numpy>=2.2.5",
+    "openmeteo-requests>=1.4.0",
+    "pandas>=2.2.3",
+    "pip",
+    "prefect>=3.4.1",
+    "python-dotenv",
+    "requests>=2.32.3",
+    "requests-cache>=1.2.1",
+    "retry-requests>=2.0.0",
+    "ruff",
+    "scikit-learn>=1.6.1",
+    "xgboost>=3.0.1",
+]
+requires-python = "~=3.11.0"
+
+
+[tool.ruff]
+line-length = 99
+src = ["weatherforecasting"]
+include = ["pyproject.toml", "weatherforecasting/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["weatherforecasting"]
+force-sort-within-sections = true
+
