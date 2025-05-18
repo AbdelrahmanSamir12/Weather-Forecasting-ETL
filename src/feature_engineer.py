@@ -62,8 +62,7 @@ def feature_engineer_shiffted(df):
     df_daily['dayofyear_sin'] = np.sin(2 * np.pi * df_daily['date'].dt.dayofyear/365)
     df_daily['dayofyear_cos'] = np.cos(2 * np.pi * df_daily['date'].dt.dayofyear/365)
     
-    # Create target - tomorrow's temperature (shift temperature back by 1 day)
-    df_daily['target_temperature'] = df_daily['temperature_2m'].shift(-1)
+    
     
     # Lag features - previous days' temperatures
     df_daily['temperature_lag1'] = df_daily['temperature_2m'].shift(1)  # yesterday
@@ -71,8 +70,8 @@ def feature_engineer_shiffted(df):
     df_daily['temperature_lag7'] = df_daily['temperature_2m'].shift(7)  # same day last week
     
     # Rolling averages
-    df_daily['temp_rolling3'] = df_daily['temperature_2m'].rolling(window=3).mean()  # 3-day moving avg
-    df_daily['temp_rolling7'] = df_daily['temperature_2m'].rolling(window=7).mean()  # weekly moving avg
+    # df_daily['temp_rolling3'] = df_daily['temperature_2m'].rolling(window=3).mean()  # 3-day moving avg
+    # df_daily['temp_rolling7'] = df_daily['temperature_2m'].rolling(window=7).mean()  # weekly moving avg
     
     # Weather condition flags
     df_daily['had_precipitation'] = (df_daily['precipitation'] > 0).astype(int)  # rain/snow today
@@ -80,6 +79,9 @@ def feature_engineer_shiffted(df):
     
     # Interactions
     df_daily['temp_x_wind'] = df_daily['temperature_2m'] * df_daily['wind_speed_10m']
+
+    # Create target - tomorrow's temperature (shift temperature back by 1 day)
+    df_daily['temperature_2m'] = df_daily['temperature_2m'].shift(-1)
     
     # Drop rows with missing values (including the last row which has no target)
     return df_daily.dropna().reset_index(drop=True)
