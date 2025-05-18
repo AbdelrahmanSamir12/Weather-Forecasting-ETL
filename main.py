@@ -1,44 +1,48 @@
-from prefect import flow
-from app.inference.forecast import forecast_flow
-from dotenv import dotenv_values
-import argparse
-import datetime
-import yaml
+from src.ingestion import fetch_weather_data,store_to_motherduck
+from src.etl import preprocess_and_store
+from src.train_prophet import load_data,train
+from src.forecast_prophet import forecast
 
+from src.motherduck_utils import get_connection, create_tables
 
-@flow(
-    name="InferenceFlow",
-    description="Inference/Monitoring Main Flow",
-    validate_parameters=True,
-    log_prints=True,
-)
-def pred_flow(db_token, running_date: str, model_path: str) -> None:
-    """main flow of weather forecasting & performance monitoring
-
-    Parameters
-    ----------
-    db_token : str
-        MotherDuck Database Credentials
-    running_date : str
-        running date of the process
-    model_path : str
-        path of model's pickle file
-    """
-    forecast_flow(db_token=db_token, date=running_date, model_path=model_path)
 
 
 if __name__ == "__main__":
-    ENV = dotenv_values(".env")
-    default_date = datetime.datetime.strftime(
-        datetime.datetime.now() - datetime.timedelta(days=2), "%Y-%m-%d"
+
+    cairo = {
+        "lat" :30.0444 ,
+        "long" : 31.2357
+    }
+    Alexandria = {
+        "lat" :31.2001 ,
+        "long" : 29.9187
+    }
+    df = fetch_weather_data(
+        latitude=30.0444,
+        longitude=31.2357,
+        start_date="2020-05-08",
+        end_date="2025-05-16"
     )
-    parser = argparse.ArgumentParser(description="ML Job Parameters")
-    parser.add_argument("--running_date", default=default_date, type=str)
-    args = parser.parse_args()
-    with open("conf/params.yaml", "r") as f:
-        conf = yaml.safe_load(f)
-    pred_flow(
-        db_token=ENV["MOTHERDUCK_TOKEN"],
-        running_date=args.running_date,
-        model_path=conf["tuner"]["model_path"],
-    )
+    
+    # For local backup
+    df.to_csv("weather_data.csv", index=False)
+
+    # For ML pipeline
+    store_to_motherduck(df)
+
+
+    #ETL
+    preprocess_and_store()
+
+    # Train 
+    train()
+
+    # forecast 
+    forecast()
+
+
+
+
+
+
+
