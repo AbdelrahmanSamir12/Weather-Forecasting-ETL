@@ -4,7 +4,7 @@ import requests_cache
 from retry_requests import retry
 import os
 
-from motherduck_utils import get_connection, create_tables  # <-- Use your utility
+from src.motherduck_utils import get_connection, create_tables  # <-- Use your utility
 
 def fetch_weather_data(
     latitude,
@@ -53,7 +53,7 @@ def store_to_motherduck(df: pd.DataFrame):
     # Avoid inserting duplicates (up to you to deduplicate based on project needs)
     conn.register("df", df)
     #delete previuos
-    conn.execute("DELETE FROM processed_weather_data")
+    conn.execute("DELETE FROM raw_weather_data")
     conn.execute("""
         INSERT INTO raw_weather_data
         SELECT * FROM df
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     df = fetch_weather_data(
         latitude=30.0444,
         longitude=31.2357,
-        start_date="2024-05-08",
+        start_date="2020-05-08",
         end_date="2025-05-16"
     )
     
