@@ -19,7 +19,7 @@ def load_data():
 
 
 def get_features_and_target(df):
-    target_col = "temperature_2m"  # This is tomorrow's temperature
+    target_col = "target_temperature"  # This is tomorrow's temperature
     feature_cols = [
         # Base features
         "dew_point_2m", "relative_humidity_2m",

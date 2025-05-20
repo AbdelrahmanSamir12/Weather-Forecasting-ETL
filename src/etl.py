@@ -1,5 +1,7 @@
 from src.motherduck_utils import get_connection
 from src.feature_engineer import feature_engineer_shiffted, feature_engineer
+
+
 def preprocess_and_store():
     conn = get_connection()
 

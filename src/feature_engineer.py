@@ -41,7 +41,7 @@ def feature_engineer(df):
     return df.dropna().reset_index(drop=True)
 
 def feature_engineer_shiffted(df):
-    # First resample to daily data
+   # Resample to daily data
     df_daily = df.resample('D', on='date').agg({
         'temperature_2m': 'mean',
         'dew_point_2m': 'mean',
@@ -50,38 +50,30 @@ def feature_engineer_shiffted(df):
         'precipitation': 'sum',
         'cloud_cover': 'mean'
     }).reset_index()
-    
-    # Create time features from date
-    # df_daily['dayofweek'] = df_daily['date'].dt.dayofweek   # Monday=0
-    # df_daily['month'] = df_daily['date'].dt.month
-    # df_daily['is_weekend'] = df_daily['date'].dt.dayofweek >= 5
-    # df_daily['day'] = df_daily['date'].dt.day
-    
-    # To encode yearly periodicity
 
-    df_daily['dayofyear_sin'] = np.sin(2 * np.pi * df_daily['date'].dt.dayofyear/365)
-    df_daily['dayofyear_cos'] = np.cos(2 * np.pi * df_daily['date'].dt.dayofyear/365)
-    
-    
-    
-    # Lag features - previous days' temperatures
-    df_daily['temperature_lag1'] = df_daily['temperature_2m'].shift(1)  # yesterday
-    df_daily['temperature_lag2'] = df_daily['temperature_2m'].shift(2)  # 2 days ago
-    df_daily['temperature_lag7'] = df_daily['temperature_2m'].shift(7)  # same day last week
-    
-    # Rolling averages
-    # df_daily['temp_rolling3'] = df_daily['temperature_2m'].rolling(window=3).mean()  # 3-day moving avg
-    # df_daily['temp_rolling7'] = df_daily['temperature_2m'].rolling(window=7).mean()  # weekly moving avg
-    
-    # Weather condition flags
-    df_daily['had_precipitation'] = (df_daily['precipitation'] > 0).astype(int)  # rain/snow today
+    # Cyclical encoding for day of year (handles leap years)
+    days_in_year = df_daily['date'].dt.is_leap_year.apply(lambda x: 366 if x else 365)
+    df_daily['dayofyear_sin'] = np.sin(2 * np.pi * df_daily['date'].dt.dayofyear / days_in_year)
+    df_daily['dayofyear_cos'] = np.cos(2 * np.pi * df_daily['date'].dt.dayofyear / days_in_year)
+
+    # Lag features
+    df_daily['temperature_lag1'] = df_daily['temperature_2m'].shift(1)
+    df_daily['temperature_lag2'] = df_daily['temperature_2m'].shift(2)
+    df_daily['temperature_lag7'] = df_daily['temperature_2m'].shift(7)
+
+    # Rolling averages (optional)
+    df_daily['temp_rolling3'] = df_daily['temperature_2m'].rolling(window=3).mean()
+    df_daily['temp_rolling7'] = df_daily['temperature_2m'].rolling(window=7).mean()
+
+    # Weather flags
+    df_daily['had_precipitation'] = (df_daily['precipitation'] > 0).astype(int)
     df_daily['high_cloud'] = (df_daily['cloud_cover'] > 50).astype(int)
-    
-    # Interactions
-    df_daily['temp_x_wind'] = df_daily['temperature_2m'] * df_daily['wind_speed_10m']
 
-    # Create target - tomorrow's temperature (shift temperature back by 1 day)
-    df_daily['temperature_2m'] = df_daily['temperature_2m'].shift(-1)
-    
-    # Drop rows with missing values (including the last row which has no target)
+    # Interaction features (using lagged temperature to avoid leakage)
+    df_daily['temp_x_wind'] = df_daily['temperature_lag1'] * df_daily['wind_speed_10m']
+
+    # Create target (tomorrow's temperature)
+    df_daily['target_temperature'] = df_daily['temperature_2m'].shift(-1)
+
+    # Drop rows with missing values
     return df_daily.dropna().reset_index(drop=True)
